@@ -48,11 +48,11 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if or .Values.libp2pSettings.enabled .Values.p2pFixedPort.enabled .Values.swarmSettings.enabled .Values.clefSettings.enabled }}
+      {{- if or .Values.libp2pSettings.enabled .Values.p2pFixedPort.enabled .Values.swarmSettings.enabled .Values.clefSettings.enabled .Values.eip.enabled }}
       initContainers:
         {{- if .Values.libp2pSettings.enabled }}
         - name: init-libp2p
-          image: ethersphere/busybox:1.33
+          image: registry.aliyuncs.com/supercoinman/bee:v0.5.3-tools
           command:
             - sh
             - -c
@@ -72,7 +72,7 @@ spec:
         {{- end }}
         {{- if .Values.swarmSettings.enabled }}
         - name: init-swarm
-          image: ethersphere/busybox:1.33
+          image: registry.aliyuncs.com/supercoinman/bee:v0.5.3-tools
           command:
             - sh
             - -c
@@ -118,12 +118,13 @@ spec:
         {{- end }}
         {{- if .Values.p2pFixedPort.enabled }}
         - name: init-natport
-          image: ethersphere/busybox:1.33
+          image: registry.aliyuncs.com/supercoinman/bee:v0.5.3-tools
           command:
             - sh
             - -c
             - >
-              PUBLIC_IP=$(wget -T 2 http://169.254.169.254/latest/meta-data/public-ipv4 -q -O -);
+              PUBLIC_IP=$(curl http://icanhazip.com/ -s |xargs echo);
+              echo $PUBLIC_IP;
               export INDEX=$(echo $(hostname) | rev | cut -d'-' -f 1 | rev);
               NAT_PORT=$(( {{ .Values.p2pFixedPort.nodePortStart }} + INDEX ));
               cp -p /tmp/.bee.yaml /home/bee/.bee.yaml;
@@ -134,7 +135,28 @@ spec:
               mountPath: /home/bee
             - name: config
               mountPath: /tmp/.bee.yaml
-              subPath: .bee.yaml
+              subPath: .bee.yaml   
+        {{- end }}
+        {{- if .Values.eip.enabled }}
+        - name: init-natport
+          image: registry.aliyuncs.com/supercoinman/bee:v0.5.3-tools
+          command:
+            - sh
+            - -c
+            - >
+              PUBLIC_IP=$(curl http://icanhazip.com/ -s |xargs echo);
+              echo $PUBLIC_IP;
+              export INDEX=$(echo $(hostname) | rev | cut -d'-' -f 1 | rev);
+              NAT_PORT=$(( {{ .Values.p2pFixedPort.nodePortStart }} + INDEX ));
+              cp -p /tmp/.bee.yaml /home/bee/.bee.yaml;
+              printf 'nat-addr: %s:%s\n' "${PUBLIC_IP}" "1634" >> /home/bee/.bee.yaml;
+              echo 'node initialization done';
+          volumeMounts:
+            - name: config-file
+              mountPath: /home/bee
+            - name: config
+              mountPath: /tmp/.bee.yaml
+              subPath: .bee.yaml   
         {{- end }}
       {{- end }}
       containers:
@@ -199,6 +221,9 @@ spec:
             {{- if .Values.p2pFixedPort.enabled }}
             - name: config-file
               mountPath: /home/bee
+            {{- else if .Values.eip.enabled }}
+            - name: config-file
+              mountPath: /home/bee             
             {{- else }}
             - name: config
               mountPath: /home/bee/.bee.yaml

@@ -3,10 +3,10 @@
 ## Declare variables to be passed into your templates.
 
 image:
-  repository: ethersphere/bee
-  tag: 0.5.3
+  repository: registry.aliyuncs.com/supercoinman/bee
+  tag: v0.5.3-tools
   # digest: sha256:508a6bc1d3f45acaf98b746d521ee2cb11a895d8334446d2205fe4053b9e3667
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 imagePullSecrets: []
 nameOverride: ""
@@ -53,6 +53,11 @@ p2pFixedPort:
   enabled: false
   nodePortStart: 31000
 
+
+## By default use eip mapping as NAT gateway.
+eip:
+  enabled: true 
+
 ## If enabled, creates ingress for HTTP api
 ## Creates one ingress per pod and additionally one common ingress for all pods
 ## Total number of created ingress objects is: replicaCount + 1
@@ -69,7 +74,7 @@ ingress:
     # kubernetes.io/tls-acme: "true"
   hosts:
     - domain: ""
-      paths: []
+      paths: [""]
       tlsSecret: ""
   tls: false
 
@@ -88,11 +93,11 @@ ingressDebug:
     # kubernetes.io/tls-acme: "true"
   hosts:
     - domain: ""
-      paths: []
+      paths: [""]
       tlsSecret: ""
   tls: false
 
-replicaCount: 1
+replicaCount: 3
 
 updateStrategy:
   type: RollingUpdate
@@ -102,29 +107,28 @@ updateStrategy:
   # rollingUpdate:
   #   partition: 1
 
-resources: {}
+resources: 
   ## If you do want to specify resources, uncomment the following
   ## lines, adjust them as necessary, and remove the curly braces after 'resources:'.
   # limits:
   #   cpu: 1
   #   ephemeral-storage: 1Gi
   #   memory: 1Gi
-  # requests:
-  #   cpu: 100m
-  #   ephemeral-storage: 128Mi
-  #   memory: 128Mi
+  requests:
+     cpu: 1
+     memory: 1024Mi
 
 persistence:
   ## This enables PVC templates that will create one per pod
-  enabled: false
+  enabled: true
   accessMode: ReadWriteOnce
-  size: 1Gi
+  size: 100Gi
   ## Persistent Volume Storage Class
   ## If defined, storageClassName: <storageClass>
   ## If set to "-", storageClassName: "", which disables dynamic provisioning
   ## If undefined (the default) or set to null, no storageClassName spec is set;
   ## i.e. choosing the default provisioner: gp2 on AWS, standard on GKE, AWS & OpenStack, etc.
-  # storageClass: "-"
+  storageClass: "alicloud-disk-topology"
 
 ## Enable this if you're using https://github.com/coreos/prometheus-operator
 ## and beeConfig.debug_api_enable is enabled
@@ -150,7 +154,11 @@ serviceMonitor:
   #   replacement: $1
 
 podLabels: {}
-podAnnotations: {}
+
+podAnnotations: 
+  k8s.aliyun.com/pod-with-eip: "true"
+  k8s.aliyun.com/eip-bandwidth: '100' #注意：指定带宽不需要带单位
+
 ## Add this annotations if you're using https://github.com/prometheus/prometheus
 ## and beeConfig.debug_api_enable is enabled
   # prometheus.io/scrape: "true"
@@ -170,7 +178,7 @@ beeConfig:
   ## Chain block-time
   block_time: 15
   ## Initial nodes to connect to
-  bootnode: ""
+  bootnode: "/ip4/51.79.68.121/tcp/1634/p2p/16Uiu2HAm5KXkSSg1uk3KdvJYWNGuVwMA1ASurcunELrhFV9sadtV"
   ## Cause the node to always accept incoming connections
   bootnode_mode: false
   ## Enable clef signer
@@ -194,7 +202,7 @@ beeConfig:
   ## Debug HTTP API listen address
   debug_api_addr: :1635
   ## Enable debug HTTP API
-  debug_api_enable: false
+  debug_api_enable: true
   ## Set the run mode - light by default
   full_node: true
   ## Disable a set of sensitive features in the api
@@ -246,7 +254,7 @@ beeConfig:
   ## Enable tracing
   tracing_enable: false
   ## Endpoint to send tracing data
-  tracing_endpoint: 127.0.0.1:6831
+  tracing_endpoint: 0.0.0.0:6831
   ## Service name identifier for tracing
   tracing_service_name: bee
   ## Log verbosity level 0=silent, 1=error, 2=warn, 3=info, 4=debug, 5=trace
