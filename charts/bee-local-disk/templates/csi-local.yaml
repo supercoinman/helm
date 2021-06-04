@@ -1,0 +1,201 @@
+{{- $fullName := include "bee.fullname" . -}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $fullName }}-node-resource-topo
+  namespace: kube-system
+data:
+  quotapath: |-
+    quotapath:
+    - name: /mnt/disk0    # 第一块盘的挂载位置
+      key: alibabacloud.com/nodepool-id # 部署节点的标签
+      operator: In
+      value: {{ .Values.nodepoolid }}
+      topology:
+        type: device
+        options: prjquota,shared
+        fstype: ext4
+        devices:
+        - /dev/vdb       # 第一块盘的deviceID
+        - /dev/nvme0n1
+    - name: /mnt/disk1   # 同理配置如下1-4块盘的配置。
+      key: alibabacloud.com/nodepool-id
+      operator: In
+      value: {{ .Values.nodepoolid }}
+      topology:
+        type: device
+        options: prjquota,shared
+        fstype: ext4
+        devices:
+        - /dev/vdc  
+        - /dev/nvme1n1
+    - name: /mnt/disk2
+      key: alibabacloud.com/nodepool-id
+      operator: In
+      value: {{ .Values.nodepoolid }}
+      topology:
+        type: device
+        options: prjquota,shared
+        fstype: ext4
+        devices:
+        - /dev/vdd    
+        - /dev/nvme2n1
+    - name: /mnt/disk3
+      key: alibabacloud.com/nodepool-id
+      operator: In
+      value: {{ .Values.nodepoolid }}
+      topology:
+        type: device
+        options: prjquota,shared
+        fstype: ext4
+        devices:
+        - /dev/vde
+        - /dev/nvme3n1
+    - name: /mnt/disk4
+      key: alibabacloud.com/nodepool-id
+      operator: In
+      value: {{ .Values.nodepoolid }}
+      topology:
+        type: device
+        options: prjquota,shared
+        fstype: ext4
+        devices:
+        - /dev/vdf
+        - /dev/nvme4n1
+    - name: /mnt/disk5
+      key: alibabacloud.com/nodepool-id
+      operator: In
+      value: {{ .Values.nodepoolid }}
+      topology:
+        type: device
+        options: prjquota,shared
+        fstype: ext4
+        devices:
+        - /dev/vdg
+        - /dev/nvme5n1
+    - name: /mnt/disk6
+      key: alibabacloud.com/nodepool-id
+      operator: In
+      value: {{ .Values.nodepoolid }}
+      topology:
+        type: device
+        options: prjquota,shared
+        fstype: ext4
+        devices:
+        - /dev/vdh
+        - /dev/nvme6n1
+    - name: /mnt/disk7
+      key: alibabacloud.com/nodepool-id
+      operator: In
+      value: {{ .Values.nodepoolid }}
+      topology:
+        type: device
+        options: prjquota,shared
+        fstype: ext4
+        devices:
+        - /dev/vdi
+        - /dev/nvme7n1       
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $fullName }}-node-resource-manager
+  namespace: kube-system
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ $fullName }}-node-resource-manager
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "watch", "list", "delete", "update", "create"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ $fullName }}-node-resource-manager-binding
+subjects:
+  - kind: ServiceAccount
+    name: {{ $fullName }}-node-resource-manager
+    namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: {{ $fullName }}-node-resource-manager
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: {{ $fullName }}-node-resource-manager
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app: node-resource-manager
+  template:
+    metadata:
+      labels:
+        app: node-resource-manager
+    spec:
+      tolerations:
+        - operator: "Exists"
+      priorityClassName: system-node-critical
+      serviceAccountName: {{ $fullName }}-node-resource-manager
+      hostNetwork: true
+      hostPID: true
+      nodeSelector:
+        alibabacloud.com/nodepool-id: {{ $.Values.nodepoolid }}
+      containers:
+        - name: node-resource-manager
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["SYS_ADMIN"]
+            allowPrivilegeEscalation: true
+          image: {{ $.Values.localDisk.nodeResourceManager.repository }}:{{ $.Values.localDisk.nodeResourceManager.tag }}
+          imagePullPolicy: {{ $.Values.localDisk.nodeResourceManager.pullPolicy }}
+          args:
+            - "--nodeid=$(KUBE_NODE_NAME)"
+          env:
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          volumeMounts:
+            - mountPath: /dev
+              mountPropagation: "HostToContainer"
+              name: host-dev
+            - mountPath: /var/log/
+              name: host-log
+            - name: etc
+              mountPath: /host/etc
+            - name: config
+              mountPath: /etc/unified-config
+      volumes:
+        - name: host-dev
+          hostPath:
+            path: /dev
+        - name: host-log
+          hostPath:
+            path: /var/log/
+        - name: etc
+          hostPath:
+            path: /etc
+        - name: config
+          configMap:
+            name: {{ $fullName }}-node-resource-topo
+## csi-local-provisioner
+---

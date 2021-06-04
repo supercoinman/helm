@@ -1,14 +1,59 @@
 ## Default values for bee.
 ## This is a YAML-formatted file.
 ## Declare variables to be passed into your templates.
-replicaCount: 3
 
+# 节点池ID
+nodepoolid: "npab8277121cd14c9dbfde200b3ba5fb06" #must be equals to the label. 
+
+# 本地盘配置
+localDisk:
+  # 机型有几块本地盘
+  localDiskCount: 4
+  # 每个盘多少个实例，发布的时候可以逐步配置上层，可以以10为单位，逐步提升。
+  # 同样在变更发布的时候，需要逐步缩减这个数目。
+  # 如果是开启openkruise的方案时，可以忽略上面的问题。
+  countPerDisk: 10
+  nodeResourceManager:
+    repository: registry.cn-hangzhou.aliyuncs.com/acs/unified-resource-manager
+    tag: v1.0-12a1c10.amd64
+    pullPolicy: Always 
+
+# 是否开始openkruise，如果开启，那么需要额外安装openkruise的Chart
+# 开启后可以提供并发控制和启动冲击控制等高级功能
+openkruise:
+  enabled: false
+  # 更新策略，开始openkruise后生效
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      # 最多每个发布10个并发，如果是4盘实例，那么并发为40.
+      maxUnavailable: 10
+# swarm bee 的配置版本
 image:
   repository: registry.aliyuncs.com/supercoinman/bee
   tag: v0.6.2-tools-timeout
   # digest: sha256:508a6bc1d3f45acaf98b746d521ee2cb11a895d8334446d2205fe4053b9e3667
   pullPolicy: Always
 
+# pod的annotation
+podAnnotations: 
+  k8s.aliyun.com/pod-with-eip: "true"
+  k8s.aliyun.com/eip-bandwidth: '100' #注意：指定带宽不需要带单位
+
+# 是否开启EIP
+eip:
+  enabled: true
+
+# 是否开启DNAT，与EIP互斥
+dnat:
+  enabled: false
+
+## StatefulSet's ordering guarantees: OrderedReady or Parallel
+## OrderedReady - launches or terminates all pods in ordered way
+## Parallel - launches or terminates all pods in parallel
+podManagementPolicy: Parallel
+
+# 每个swarm bee的资源配置
 resources: 
   ## If you do want to specify resources, uncomment the following
   ## lines, adjust them as necessary, and remove the curly braces after 'resources:'.
@@ -17,12 +62,10 @@ resources:
   #   ephemeral-storage: 1Gi
   #   memory: 1Gi
   requests:
-     cpu: 1
-     memory: 1024Mi
-## By default use eip mapping as NAT gateway.
-eip:
-  enabled: true 
+     cpu: 0.1
+     memory: 100Mi
 
+# 每个swarm bee的存储申请配置
 persistence:
   ## This enables PVC templates that will create one per pod
   enabled: true
@@ -33,22 +76,9 @@ persistence:
   ## If set to "-", storageClassName: "", which disables dynamic provisioning
   ## If undefined (the default) or set to null, no storageClassName spec is set;
   ## i.e. choosing the default provisioner: gp2 on AWS, standard on GKE, AWS & OpenStack, etc.
-  storageClass: "alicloud-disk-topology"
 
-## StatefulSet's ordering guarantees: OrderedReady or Parallel
-## OrderedReady - launches or terminates all pods in ordered way
-## Parallel - launches or terminates all pods in parallel
-podManagementPolicy: Parallel
 
-nodeSelector: 
-  alibabacloud.com/nodepool-id: npab8277121cd14c9dbfde200b3ba5fb06
-
-podAnnotations: 
-  k8s.aliyun.com/pod-with-eip: "true"
-  k8s.aliyun.com/eip-bandwidth: '100' #注意：指定带宽不需要带单位
-
-# ------------------------------------------------------------ Advanced Options -----------------------------------------------------------
-
+# --------------------------------------------------------- Advanced Options -----------------------------------------------------
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
@@ -59,8 +89,6 @@ serviceAccount:
   ## Name of the service account to use
   ## if not set and create is true, a name is generated using the fullname template
   name:
-
-
 
 ## Bee process inside container is run with gid/uid 999
 ## fsGroup=999 enables mounting external volumes with appropriate permissions
@@ -130,13 +158,12 @@ ingressDebug:
       tlsSecret: ""
   tls: false
 
-updateStrategy:
-  type: RollingUpdate
   ## in case libp2pSettings installation is enabled, if needed (persistance is not enabled)
   ## uncomment bellow to skip updating first N pods
   ## recommendation is that bootnodes are first N pods in the cluster
   # rollingUpdate:
   #   partition: 1
+
 
 ## Enable this if you're using https://github.com/coreos/prometheus-operator
 ## and beeConfig.debug_api_enable is enabled
@@ -162,6 +189,7 @@ serviceMonitor:
   #   replacement: $1
 
 podLabels: {}
+
 
 
 ## Add this annotations if you're using https://github.com/prometheus/prometheus

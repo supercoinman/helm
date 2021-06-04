@@ -1,0 +1,23 @@
+## Default values for bee.
+## This is a YAML-formatted file.
+## Declare variables to be passed into your templates.
+
+csiLocalPluginRegister:
+  image: registry.cn-guangzhou.aliyuncs.com/supercoinman/csi-node-driver-registrar
+  tag: v1.2.0
+  pullPolicy: Always  
+
+csiLocalPlugin:
+  image: registry.cn-guangzhou.aliyuncs.com/supercoinman/csi-plugin
+  tag: v1.18.8.47-906bd535-aliyun
+  pullPolicy: Always
+
+csiLocaProvisioner:
+  image: registry.cn-guangzhou.aliyuncs.com/supercoinman/csi-provisioner
+  tag: v1.6.0-b6f763a43-aliyun
+  pullPolicy: Always
+
+csiLocalResizer:
+  image: registry.cn-guangzhou.aliyuncs.com/supercoinman/csi-resizer
+  tag: v0.3.0
+  pullPolicy: Always 

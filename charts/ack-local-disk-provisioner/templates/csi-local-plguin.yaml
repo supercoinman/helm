@@ -1,0 +1,115 @@
+## csi-local-plguin 
+--- 
+apiVersion: storage.k8s.io/v1beta1
+kind: CSIDriver
+metadata:
+  name: localplugin.csi.alibabacloud.com
+spec:
+  attachRequired: false
+  podInfoOnMount: true
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  labels:
+    app: csi-local-plugin
+  name: csi-local-plugin
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app: csi-local-plugin
+  template:
+    metadata:
+      labels:
+        app: csi-local-plugin
+    spec:
+      containers:
+      - args:
+        - --v=5
+        - --csi-address=/csi/csi.sock
+        - --kubelet-registration-path=/var/lib/kubelet/csi-plugins/localplugin.csi.alibabacloud.com/csi.sock
+        env:
+        - name: KUBE_NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        image: {{ .Values.csiLocalPluginRegister.image }}:{{ .Values.csiLocalPluginRegister.tag }}
+        imagePullPolicy: {{ .Values.csiLocalPluginRegister.pullPolicy }}
+        name: driver-registrar
+        volumeMounts:
+        - mountPath: /csi
+          name: plugin-dir
+        - mountPath: /registration
+          name: registration-dir
+      - args:
+        - --endpoint=$(CSI_ENDPOINT)
+        - --v=5
+        - --nodeid=$(KUBE_NODE_NAME)
+        - --driver=localplugin.csi.alibabacloud.com
+        env:
+        - name: KUBE_NODE_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: SERVICE_PORT
+          value: "11290"
+        - name: CSI_ENDPOINT
+          value: unix://var/lib/kubelet/csi-plugins/localplugin.csi.alibabacloud.com/csi.sock
+        image: {{ .Values.csiLocalPlugin.image }}:{{ .Values.csiLocalPlugin.tag }}
+        imagePullPolicy: {{ .Values.csiLocalPlugin.pullPolicy }}
+        name: csi-localplugin
+        securityContext:
+          allowPrivilegeEscalation: true
+          capabilities:
+            add:
+            - SYS_ADMIN
+          privileged: true
+        volumeMounts:
+        - mountPath: /var/lib/kubelet
+          mountPropagation: Bidirectional 
+          name: pods-mount-dir
+        - mountPath: /dev
+          mountPropagation: HostToContainer
+          name: host-dev
+        - mountPath: /var/log/
+          name: host-log
+        - mountPath: /mnt
+          mountPropagation: Bidirectional
+          name: quota-path-dir
+      hostNetwork: true
+      hostPID: true
+      serviceAccount: csi-admin
+      tolerations:
+      - operator: Exists
+      volumes:
+      - hostPath:
+          path: /var/lib/kubelet/csi-plugins/localplugin.csi.alibabacloud.com
+          type: DirectoryOrCreate
+        name: plugin-dir
+      - hostPath:
+          path: /var/lib/kubelet/plugins_registry
+          type: DirectoryOrCreate
+        name: registration-dir
+      - hostPath:
+          path: /var/lib/kubelet
+          type: Directory
+        name: pods-mount-dir
+      - hostPath:
+          path: /dev
+          type: ""
+        name: host-dev
+      - hostPath:
+          path: /var/log/
+          type: ""
+        name: host-log
+      - hostPath:
+          path: /mnt
+          type: Directory
+        name: quota-path-dir
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 10%
+    type: RollingUpdate

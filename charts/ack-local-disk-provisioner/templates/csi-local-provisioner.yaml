@@ -1,0 +1,79 @@
+## csi-local-provisioner
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: csi-local-provisioner
+  name: csi-local-provisioner
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app: csi-local-provisioner
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: csi-local-provisioner
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - preference:
+              matchExpressions:
+              - key: node-role.kubernetes.io/master
+                operator: Exists
+            weight: 1
+      containers:
+      - args:
+        - --csi-address=$(ADDRESS)
+        - --feature-gates=Topology=True
+        - --volume-name-prefix=local
+        - --strict-topology=true
+        - --timeout=150s
+        - --extra-create-metadata=true
+        - --enable-leader-election=true
+        - --leader-election-type=leases
+        - --retry-interval-start=500ms
+        - --v=5
+        env:
+        - name: ADDRESS
+          value: /socketDir/csi.sock
+        image: {{ .Values.csiLocaProvisioner.image }}:{{ .Values.csiLocaProvisioner.tag }}
+        imagePullPolicy: {{ .Values.csiLocaProvisioner.pullPolicy }}
+        name: external-local-provisioner
+        volumeMounts:
+        - mountPath: /socketDir
+          name: socket-dir
+      - args:
+        - --v=5
+        - --csi-address=$(ADDRESS)
+        - --leader-election
+        env:
+        - name: ADDRESS
+          value: /socketDir/csi.sock
+        image: {{ .Values.csiLocalResizer.image }}:{{ .Values.csiLocalResizer.tag }}
+        imagePullPolicy: {{ .Values.csiLocalResizer.pullPolicy }}
+        name: external-local-resizer
+        volumeMounts:
+        - mountPath: /socketDir/
+          name: socket-dir
+      hostNetwork: true
+      serviceAccount: csi-admin
+      tolerations:
+      - effect: NoSchedule
+        operator: Exists
+        key: node-role.kubernetes.io/master
+      - effect: NoSchedule
+        operator: Exists
+        key: node.cloudprovider.kubernetes.io/uninitialized
+      volumes:
+      - hostPath:
+          path: /var/lib/kubelet/csi-plugins/localplugin.csi.alibabacloud.com
+          type: DirectoryOrCreate
+        name: socket-dir
