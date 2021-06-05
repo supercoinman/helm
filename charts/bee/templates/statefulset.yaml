@@ -198,7 +198,7 @@ spec:
             initialDelaySeconds: 20
           readinessProbe:
             httpGet:
-              path: /readiness
+              path: /health
               port: debug
             initialDelaySeconds: 20
           {{- else }}
