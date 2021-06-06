@@ -190,13 +190,13 @@ beeConfig:
   ## Data directory
   data_dir: /home/bee/.bee
   ## DB capacity in chunks
-  cache_capacity: 1000000
+  cache_capacity: !!string 1000000
   ## Number of open files allowed by database
   db_open_files_limit: 200
   ## Size of block cache of the database in bytes
-  db_block_cache_capacity: 33554432
+  db_block_cache_capacity: !!string 33554432
   ## Size of the database write buffer in bytes
-  db_write_buffer_size: 33554432
+  db_write_buffer_size: !!string 33554432
   ## Disables db compactions triggered by seeks
   db_disable_seeks_compaction: false
   ## Debug HTTP API listen address
@@ -222,11 +222,11 @@ beeConfig:
   # existingSecret:
   # existingSecretPasswordKey:
   ## Amount in BZZ below the peers payment threshold when we initiate settlement
-  payment_early: 1000000000000
+  payment_early: !!string 1000000000000
   ## Threshold in BZZ where you expect to get paid from your peers
-  payment_threshold: 10000000000000
+  payment_threshold: !!string 10000000000000
   ## Excess debt above payment threshold in BZZ where you disconnect from your peer
-  payment_tolerance: 50000000000000
+  payment_tolerance: !!string 50000000000000
   ## Postage stamp address
   postage_stamp_address: ""
   ## Price oracle address
@@ -248,7 +248,7 @@ beeConfig:
   ## Set swap legacy factory addresses
   swap_legacy_factory_addresses: ""
   ## Set initial deposit if deploying a new chequebook
-  swap_initial_deposit: 10000000000000000
+  swap_initial_deposit: !!string 10000000000000000
   ## Resolver connection string
   resolver_options: ""
   ## Enable tracing
