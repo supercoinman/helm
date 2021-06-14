@@ -14,7 +14,7 @@ localDisk:
   # 如果是开启openkruise的方案时，可以忽略上面的问题。
   countPerDisk: 10
   nodeResourceManager:
-    repository: registry.cn-hangzhou.aliyuncs.com/acs/unified-resource-manager
+    repository: registry.cn-guangzhou.aliyuncs.com/supercoinman/unified-resource-manager
     tag: v1.0-12a1c10.amd64
     pullPolicy: Always 
 
