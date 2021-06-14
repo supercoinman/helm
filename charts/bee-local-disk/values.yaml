@@ -30,7 +30,7 @@ openkruise:
       maxUnavailable: 10
 # swarm bee 的配置版本
 image:
-  repository: registry.aliyuncs.com/supercoinman/bee
+  repository: registry.cn-guangzhou.aliyuncs.com/supercoinman/bee
   tag: v0.6.2-tools-timeout
   # digest: sha256:508a6bc1d3f45acaf98b746d521ee2cb11a895d8334446d2205fe4053b9e3667
   pullPolicy: Always
