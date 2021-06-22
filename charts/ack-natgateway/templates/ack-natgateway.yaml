@@ -1,0 +1,168 @@
+{{- $length := last .Values.natconfig.natGwPools | int }}
+{{- $max := sub $length 1}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: natgw-controller
+  namespace: kube-system
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: natgw-controller
+  namespace: kube-system
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "watch", "list"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["create","get", "update", "watch", "list"]
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["create","get", "list"]
+  - apiGroups: ["alibabacloud.com"]
+    resources: ["poddnats", "poddnats/status"]
+    verbs: ["*"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["create","update", "get", "watch", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: natgw-controller-binding
+  namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: natgw-controller
+subjects:
+  - kind: ServiceAccount
+    name: natgw-controller
+    namespace: kube-system
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: natgw-config
+  namespace: kube-system
+data:
+  config: |-
+    {
+      "Global": {
+          "accessKeyID": "{{ .Values.natconfig.accessKeyId }}",
+          "accessKeySecret": "{{ .Values.natconfig.accessKeySecret }}",
+          "vpcid": "{{ .Values.natconfig.vpcId }}",
+          "region": "{{ .Values.natconfig.region }}",
+          "clusterID": "{{ .Values.natconfig.clusterId }}",
+          "natGwPool": [
+             {{- range $index, $value := .Values.natconfig.natGwPools }}
+             {{- $value | toJson }}{{- if lt $index $max }},{{- end }}
+             {{- end }}]
+      }
+    }
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: natgw-controller
+  labels:
+    app: natgw-controller
+  namespace: kube-system
+spec:
+  replicas: {{ .Values.natgateway.replicas | int }}
+  selector:
+    matchLabels:
+      app: natgw-controller
+  template:
+    metadata:
+      labels:
+        app: natgw-controller
+    spec:
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - natgw-controller
+                topologyKey: "kubernetes.io/hostname"
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: type
+                    operator: NotIn
+                    values:
+                      - virtual-kubelet
+                  - key: k8s.aliyun.com
+                    operator: NotIn
+                    values:
+                      - "true"
+      serviceAccountName: natgw-controller
+      priorityClassName: system-node-critical
+      containers:
+        - name: natgw-controller
+          image: {{ .Values.natgateway.image }}:{{ .Values.natgateway.tag }}
+          imagePullPolicy: {{ .Values.natgateway.pullPolicy }}
+          args:
+            - /cloud-controller-manager
+            - --cloud-config=/etc/config/cloud-config.json
+            - --enable-controllers=natgw
+            - --enable-leader-election=true
+            - --leader-election-id=natgw-controller
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: 10258
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 10
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthz
+              port: 10258
+              scheme: HTTP
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 10
+          volumeMounts:
+            - name: cloud-config
+              mountPath: /etc/config/
+              readOnly: true
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+      volumes:
+        - name: cloud-config
+          configMap:
+            name: natgw-config
+            defaultMode: 420
+            items:
+              - key: config
+                path: cloud-config.json

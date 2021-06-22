@@ -1,3 +1,5 @@
+{{- $fullName := include "bee.fullname" . -}}
+{{- $dot := . }}
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -24,8 +26,17 @@ spec:
         {{ $key }}: {{ $value | quote }}
       {{- end }}
       {{- end }}
-      {{- with .Values.podAnnotations }}
       annotations:
+      {{- if $.Values.eip.enabled }}  
+        k8s.aliyun.com/pod-with-eip: "true"
+        k8s.aliyun.com/eip-bandwidth: '100' #注意：指定带宽不需要带单位
+      {{- end }}
+      {{- if $.Values.dnat.enabled }}  
+        k8s.aliyun.com/pod-dnat: "true" # 必须， 表示打开pod-dnat的能力
+        k8s.aliyun.com/pod-dnat-expose-port: "1634" # 必须， 表示pod的端口
+        k8s.aliyun.com/pod-dnat-expose-protocol: "tcp" # 可选，表示pod的端口的协议，不配置默认为tcp
+      {{- end }} 
+        {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
@@ -36,8 +47,9 @@ spec:
       serviceAccountName: {{ include "bee.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      {{- with .Values.nodeSelector }}
       nodeSelector:
+        alibabacloud.com/nodepool-id: {{ $.Values.nodepoolid }}
+        {{- with .Values.nodeSelector }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.affinity }}
@@ -48,7 +60,7 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if or .Values.libp2pSettings.enabled .Values.p2pFixedPort.enabled .Values.swarmSettings.enabled .Values.clefSettings.enabled .Values.eip.enabled }}
+      {{- if or .Values.libp2pSettings.enabled .Values.p2pFixedPort.enabled .Values.swarmSettings.enabled .Values.clefSettings.enabled .Values.eip.enabled .Values.dnat.enabled }}
       initContainers:
         {{- if .Values.libp2pSettings.enabled }}
         - name: init-libp2p
@@ -158,6 +170,40 @@ spec:
               mountPath: /tmp/.bee.yaml
               subPath: .bee.yaml   
         {{- end }}
+        {{- if $.Values.dnat.enabled }}
+        - name: init-natport
+          image: "{{ include "bee.image" $dot }}"
+          env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          command:
+            - /bin/bash
+            - -c
+            - >
+              APISERVER=https://kubernetes.default.svc;
+              SERVICEACCOUNT=/var/run/secrets/kubernetes.io/serviceaccount;
+              NAMESPACE=$(cat ${SERVICEACCOUNT}/namespace);
+              TOKEN=$(cat ${SERVICEACCOUNT}/token);
+              CACERT=${SERVICEACCOUNT}/ca.crt;
+              while [[ $(curl --cacert ${CACERT} -H 'Accept: application/json' -H 'Content-Type: application/json'  --header "Authorization: Bearer ${TOKEN}" -X GET ${APISERVER}/apis/alibabacloud.com/v1/poddnats?fieldSelector=metadata.name=$POD_NAME| jq .items) == "[]" ]]; do sleep 5; done;
+              CONTENT=$(curl --cacert ${CACERT} -H 'Accept: application/json' -H 'Content-Type: application/json'  --header "Authorization: Bearer ${TOKEN}" -X GET ${APISERVER}/apis/alibabacloud.com/v1/poddnats?fieldSelector=metadata.name=$POD_NAME -s |jq .);
+              echo $CONTENT;
+              PUBLIC_IP=$(echo ${CONTENT} | jq -r ".items[0].spec.externalIP");
+              echo $PUBLIC_IP;
+              NAT_PORT=$(echo ${CONTENT} | jq -r ".items[0].spec.externalPort");
+              echo $NAT_PORT;
+              cp -p /tmp/.bee.yaml /home/bee/.bee.yaml;
+              printf 'nat-addr: %s:%s\n' "${PUBLIC_IP}" "${NAT_PORT}" >> /home/bee/.bee.yaml;
+              echo 'node initialization done';
+          volumeMounts:
+            - name: config-file
+              mountPath: /home/bee
+            - name: config
+              mountPath: /tmp/.bee.yaml
+              subPath: .bee.yaml   
+        {{- end }}
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
@@ -223,7 +269,10 @@ spec:
               mountPath: /home/bee
             {{- else if .Values.eip.enabled }}
             - name: config-file
-              mountPath: /home/bee             
+              mountPath: /home/bee 
+            {{- else if .Values.dnat.enabled }}
+            - name: config-file
+              mountPath: /home/bee              
             {{- else }}
             - name: config
               mountPath: /home/bee/.bee.yaml

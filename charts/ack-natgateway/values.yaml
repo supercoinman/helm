@@ -1,0 +1,18 @@
+natgateway:
+  image: registry.cn-hangzhou.aliyuncs.com/supercoinman/cloud-controller-manager-amd64
+  tag: v1.9.3.457-g2fee60c-aliyun
+  pullPolicy: Always
+  replicas: 2
+
+natconfig: 
+  vpcId: "" 
+  region: ""
+  clusterId: ""
+  accessKeyId: "" # echo -n accessKeyId | base64
+  accessKeySecret: "" # echo -n accessKeySecret | base64
+  natGwPools: 
+  - natgwId: "" 
+    zoneId: ""
+    portRangeStart: 512
+    portRangeEnd: 1024
+    eips: [""]

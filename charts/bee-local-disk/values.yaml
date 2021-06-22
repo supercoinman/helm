@@ -3,7 +3,7 @@
 ## Declare variables to be passed into your templates.
 
 # 节点池ID
-nodepoolid: "npab8277121cd14c9dbfde200b3ba5fb06" #must be equals to the label. 
+nodepoolid: "" #must be equals to the label. 
 
 # 本地盘配置
 localDisk:
@@ -12,9 +12,9 @@ localDisk:
   # 每个盘多少个实例，发布的时候可以逐步配置上层，可以以10为单位，逐步提升。
   # 同样在变更发布的时候，需要逐步缩减这个数目。
   # 如果是开启openkruise的方案时，可以忽略上面的问题。
-  countPerDisk: 10
+  countPerDisk: 1
   nodeResourceManager:
-    repository: registry.cn-hangzhou.aliyuncs.com/acs/unified-resource-manager
+    repository: registry.cn-guangzhou.aliyuncs.com/supercoinman/unified-resource-manager
     tag: v1.0-12a1c10.amd64
     pullPolicy: Always 
 
@@ -30,15 +30,17 @@ openkruise:
       maxUnavailable: 10
 # swarm bee 的配置版本
 image:
-  repository: registry.aliyuncs.com/supercoinman/bee
+  repository: registry.cn-guangzhou.aliyuncs.com/supercoinman/bee
   tag: v0.6.2-tools-timeout
   # digest: sha256:508a6bc1d3f45acaf98b746d521ee2cb11a895d8334446d2205fe4053b9e3667
   pullPolicy: Always
 
 # pod的annotation
-podAnnotations: 
-  k8s.aliyun.com/pod-with-eip: "true"
-  k8s.aliyun.com/eip-bandwidth: '100' #注意：指定带宽不需要带单位
+#podAnnotations: 
+#  k8s.aliyun.com/pod-with-eip: "true"
+#  k8s.aliyun.com/eip-bandwidth: '100' #注意：指定带宽不需要带单位
+
+
 
 # 是否开启EIP
 eip:
@@ -85,7 +87,7 @@ fullnameOverride: ""
 
 serviceAccount:
   ## Specifies whether a service account should be created
-  create: false
+  create: true
   ## Name of the service account to use
   ## if not set and create is true, a name is generated using the fullname template
   name:
@@ -189,8 +191,6 @@ serviceMonitor:
   #   replacement: $1
 
 podLabels: {}
-
-
 
 ## Add this annotations if you're using https://github.com/prometheus/prometheus
 ## and beeConfig.debug_api_enable is enabled
