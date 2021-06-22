@@ -80,6 +80,98 @@ persistence:
   ## i.e. choosing the default provisioner: gp2 on AWS, standard on GKE, AWS & OpenStack, etc.
 
 
+beeConfig:
+  ## HTTP API listen address
+  api_addr: :1633
+  ## Chain block-time
+  block_time: 15
+  ## Initial nodes to connect to
+  bootnode: "/ip4/51.79.68.121/tcp/1634/p2p/16Uiu2HAm5KXkSSg1uk3KdvJYWNGuVwMA1ASurcunELrhFV9sadtV"
+  ## Cause the node to always accept incoming connections
+  bootnode_mode: false
+  ## Enable clef signer
+  clef_signer_enable: false
+  ## Set clef signer endpoint
+  clef_signer_endpoint: "http://localhost:8550"
+  ## Origins with CORS headers enabled
+  cors_allowed_origins: ""
+  ## Data directory
+  data_dir: /home/bee/.bee
+  ## DB capacity in chunks
+  cache_capacity: !!string 1000000
+  ## Number of open files allowed by database
+  db_open_files_limit: 200
+  ## Size of block cache of the database in bytes
+  db_block_cache_capacity: !!string 33554432
+  ## Size of the database write buffer in bytes
+  db_write_buffer_size: !!string 33554432
+  ## Disables db compactions triggered by seeks
+  db_disable_seeks_compaction: false
+  ## Debug HTTP API listen address
+  debug_api_addr: :1635
+  ## Enable debug HTTP API
+  debug_api_enable: true
+  ## Set the run mode - light by default
+  full_node: true
+  ## Disable a set of sensitive features in the api
+  gateway_mode: false
+  ## Enable global pinning
+  global_pinning_enable: false
+  ## NAT exposed address
+  nat_addr: ""
+  ## ID of the Swarm network
+  network_id: 1
+  ## Password for decrypting keys (please change it for production deployments)
+  ## If not set, it will be automatically generated
+  password: beekeeper
+  ## Path to a file that contains password for decrypting keys is /home/bee/.secret/password
+  usePasswordFile: false
+  ## Use existing secret (ignores previous password)
+  # existingSecret:
+  # existingSecretPasswordKey:
+  ## Amount in BZZ below the peers payment threshold when we initiate settlement
+  payment_early: !!string 1000000000000
+  ## Threshold in BZZ where you expect to get paid from your peers
+  payment_threshold: !!string 10000000000000
+  ## Excess debt above payment threshold in BZZ where you disconnect from your peer
+  payment_tolerance: !!string 50000000000000
+  ## Postage stamp address
+  postage_stamp_address: ""
+  ## Price oracle address
+  price_oracle_address: ""
+  ## P2P listen address
+  p2p_addr: :1634
+  ## Enable P2P QUIC transport
+  p2p_quic_enable: false
+  ## Enable P2P WebSocket transport
+  p2p_ws_enable: false
+  ## Whether node starts with no listen addresses for p2p
+  standalone: false
+  ## Enable SWAP
+  swap_enable: true
+  ## Set swap ethereum blockchain endpoint
+  swap_endpoint: "https://goerli.infura.io/v3/key"
+  ## Set swap factory address
+  swap_factory_address: ""
+  ## Set swap legacy factory addresses
+  swap_legacy_factory_addresses: ""
+  ## Set initial deposit if deploying a new chequebook
+  swap_initial_deposit: !!string 10000000000000000
+  ## Resolver connection string
+  resolver-options: "https://goerli.infura.io/v3/key"
+  ## Enable tracing
+  tracing_enable: false
+  ## Endpoint to send tracing data
+  tracing_endpoint: 0.0.0.0:6831
+  ## Service name identifier for tracing
+  tracing_service_name: bee
+  ## Log verbosity level 0=silent, 1=error, 2=warn, 3=info, 4=debug, 5=trace
+  verbosity: 3
+  ## Send a welcome message string during handshakes
+  welcome_message: "Welcome to the Swarm, you are Bee-ing connected!"
+  ## Transaction value
+  transaction: ""
+
 # --------------------------------------------------------- Advanced Options -----------------------------------------------------
 imagePullSecrets: []
 nameOverride: ""
@@ -202,98 +294,6 @@ affinity: {}
 tolerations: []
 
 beeCommand: ["bee", "start", "--config=.bee.yaml"]
-
-beeConfig:
-  ## HTTP API listen address
-  api_addr: :1633
-  ## Chain block-time
-  block_time: 15
-  ## Initial nodes to connect to
-  bootnode: "/ip4/51.79.68.121/tcp/1634/p2p/16Uiu2HAm5KXkSSg1uk3KdvJYWNGuVwMA1ASurcunELrhFV9sadtV"
-  ## Cause the node to always accept incoming connections
-  bootnode_mode: false
-  ## Enable clef signer
-  clef_signer_enable: false
-  ## Set clef signer endpoint
-  clef_signer_endpoint: "http://localhost:8550"
-  ## Origins with CORS headers enabled
-  cors_allowed_origins: ""
-  ## Data directory
-  data_dir: /home/bee/.bee
-  ## DB capacity in chunks
-  cache_capacity: !!string 1000000
-  ## Number of open files allowed by database
-  db_open_files_limit: 200
-  ## Size of block cache of the database in bytes
-  db_block_cache_capacity: !!string 33554432
-  ## Size of the database write buffer in bytes
-  db_write_buffer_size: !!string 33554432
-  ## Disables db compactions triggered by seeks
-  db_disable_seeks_compaction: false
-  ## Debug HTTP API listen address
-  debug_api_addr: :1635
-  ## Enable debug HTTP API
-  debug_api_enable: true
-  ## Set the run mode - light by default
-  full_node: true
-  ## Disable a set of sensitive features in the api
-  gateway_mode: false
-  ## Enable global pinning
-  global_pinning_enable: false
-  ## NAT exposed address
-  nat_addr: ""
-  ## ID of the Swarm network
-  network_id: 1
-  ## Password for decrypting keys (please change it for production deployments)
-  ## If not set, it will be automatically generated
-  password: beekeeper
-  ## Path to a file that contains password for decrypting keys is /home/bee/.secret/password
-  usePasswordFile: false
-  ## Use existing secret (ignores previous password)
-  # existingSecret:
-  # existingSecretPasswordKey:
-  ## Amount in BZZ below the peers payment threshold when we initiate settlement
-  payment_early: !!string 1000000000000
-  ## Threshold in BZZ where you expect to get paid from your peers
-  payment_threshold: !!string 10000000000000
-  ## Excess debt above payment threshold in BZZ where you disconnect from your peer
-  payment_tolerance: !!string 50000000000000
-  ## Postage stamp address
-  postage_stamp_address: ""
-  ## Price oracle address
-  price_oracle_address: ""
-  ## P2P listen address
-  p2p_addr: :1634
-  ## Enable P2P QUIC transport
-  p2p_quic_enable: false
-  ## Enable P2P WebSocket transport
-  p2p_ws_enable: false
-  ## Whether node starts with no listen addresses for p2p
-  standalone: false
-  ## Enable SWAP
-  swap_enable: true
-  ## Set swap ethereum blockchain endpoint
-  swap_endpoint: "https://goerli.infura.io/v3/key"
-  ## Set swap factory address
-  swap_factory_address: ""
-  ## Set swap legacy factory addresses
-  swap_legacy_factory_addresses: ""
-  ## Set initial deposit if deploying a new chequebook
-  swap_initial_deposit: !!string 10000000000000000
-  ## Resolver connection string
-  resolver-options: "https://goerli.infura.io/v3/key"
-  ## Enable tracing
-  tracing_enable: false
-  ## Endpoint to send tracing data
-  tracing_endpoint: 0.0.0.0:6831
-  ## Service name identifier for tracing
-  tracing_service_name: bee
-  ## Log verbosity level 0=silent, 1=error, 2=warn, 3=info, 4=debug, 5=trace
-  verbosity: 3
-  ## Send a welcome message string during handshakes
-  welcome_message: "Welcome to the Swarm, you are Bee-ing connected!"
-  ## Transaction value
-  transaction: ""
 
 ## If you prefer setting config options using ENV variables you can set beeEnv
 ## Use same option names as in beeConfig it will be translated to ENV variable format: api_addr -> BEE_API_ADDR
