@@ -54,4 +54,5 @@ data:
     verbosity: {{ .Values.beeConfig.verbosity }}
     welcome-message: {{ .Values.beeConfig.welcome_message }}
     transaction: {{ .Values.beeConfig.transaction }}
+    mainnet: {{ .Values.beeConfig.mainnet }}
     

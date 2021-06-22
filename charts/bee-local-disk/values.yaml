@@ -31,7 +31,7 @@ openkruise:
 # swarm bee 的配置版本
 image:
   repository: registry.cn-guangzhou.aliyuncs.com/supercoinman/bee
-  tag: v0.6.2-tools-timeout
+  tag: v1.0.0-tools
   # digest: sha256:508a6bc1d3f45acaf98b746d521ee2cb11a895d8334446d2205fe4053b9e3667
   pullPolicy: Always
 
@@ -150,13 +150,13 @@ beeConfig:
   ## Enable SWAP
   swap_enable: true
   ## Set swap ethereum blockchain endpoint
-  swap_endpoint: "https://goerli.infura.io/v3/key"
+  swap_endpoint: "https://stake.getblock.io/mainnet/?api_key=<get_it_from_getblock.io>"
   ## Set swap factory address
   swap_factory_address: ""
   ## Set swap legacy factory addresses
   swap_legacy_factory_addresses: ""
   ## Set initial deposit if deploying a new chequebook
-  swap_initial_deposit: !!string 10000000000000000
+  swap_initial_deposit: !!string 0
   ## Resolver connection string
   resolver-options: "https://goerli.infura.io/v3/key"
   ## Enable tracing
@@ -171,6 +171,8 @@ beeConfig:
   welcome_message: "Welcome to the Swarm, you are Bee-ing connected!"
   ## Transaction value
   transaction: ""
+  ## mainnet 
+  mainnet: true
 
 # --------------------------------------------------------- Advanced Options -----------------------------------------------------
 imagePullSecrets: []
