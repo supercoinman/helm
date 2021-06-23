@@ -1,0 +1,17 @@
+apiVersion: v1
+appVersion: latest
+name: xdai
+version: 0.9.6
+kubeVersion: ">=1.15.0-0"
+description: Ethereum Swarm Bee xdai Helm chart for Kubernetes
+home: https://swarm.ethereum.org
+icon: https://swarm-guide.readthedocs.io/en/latest/_images/swarm.png
+keywords:
+  - blockchain
+  - ethereum
+  - storage
+  - swarm
+  - web3
+sources:
+  - https://github.com/ethersphere/bee
+type: application
