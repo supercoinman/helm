@@ -1,5 +1,5 @@
-{{- $length := last .Values.natconfig.natGwPools | int }}
-{{- $max := sub $length 1}}
+{{- $length := len .Values.natconfig.natGwPools | int }}
+{{- $max := sub $length 1 }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:

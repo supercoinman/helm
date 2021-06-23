@@ -5,14 +5,14 @@ natgateway:
   replicas: 2
 
 natconfig: 
-  vpcId: "" 
-  region: ""
-  clusterId: ""
-  accessKeyId: "" # echo -n accessKeyId | base64
-  accessKeySecret: "" # echo -n accessKeySecret | base64
-  natGwPools: 
-  - natgwId: "" 
-    zoneId: ""
-    portRangeStart: 512
-    portRangeEnd: 1024
-    eips: [""]
+  vpcId: "" # 集群和nat网关所属的vpcid
+  region: "" # 集群和nat网关所属的regionid
+  clusterId: "" # 容器集群的集群id
+  accessKeyId: "" # 上面准备的ak的base64之后的值， echo -n ak | base64
+  accessKeySecret: "" # 上面准备的ak secret的base64之后的值 echo -n ak-secret
+  natGwPools:  # 此处配置nat网关的列表，pod的Dnat将从列表中选取
+  - natgwId: "" # nat网关的id
+    zoneId: "" # nat网关的可用区
+    portRangeStart: 512 # EIP上分配开始的端口 default 512
+    portRangeEnd: 1024 # EIP上分配结束的端口,default 1024
+    eips: [] # eips的IP地址列表", "如果不配置此选项，则默认使用natgw关联的所有eip
