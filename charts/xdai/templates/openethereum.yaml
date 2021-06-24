@@ -15,16 +15,13 @@ spec:
       labels:
         {{- include "xdai.labels" . | nindent 8 }}
     spec:
-      nodeSelector:
-        {{- with .Values.nodeSelector }}
-        {{- toYaml . | nindent 8 }}
       containers:
       - name: xdai
         image: "{{ include "xdai.image" . }}"
         args: 
-            {{- range .Values.args }}
-            - {{ . }}
-            {{- end }}
+        {{- range .Values.args }}
+        - {{ . }}
+        {{- end }}
         ports:
         - containerPort: 8545
           name: http
@@ -33,12 +30,13 @@ spec:
         - containerPort: 30303
           name: udp
         resources:
-          {{- toYaml .Values.resources | nindent 12 }}
+          {{- toYaml .Values.resources | nindent 10 }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "xdai.fullname" . }}
+  namespace: {{ .Release.Namespace }}
 spec:
   selector:
     {{- include "xdai.labels" . | nindent 4 }}

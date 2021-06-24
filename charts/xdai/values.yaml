@@ -24,8 +24,6 @@ args:
 
 labels: {}
 
-nodeSelector: {}
-
 resources: {}
 
 nameOverride: ""
