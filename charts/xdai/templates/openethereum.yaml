@@ -1,24 +1,27 @@
+---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ include "xdai.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "xdai.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.replicas | int }}
   selector:
     matchLabels:
       {{- include "xdai.labels" . | nindent 6 }}
+  serviceName: {{ include "xdai.fullname" . }}
+  replicas:  {{ .Values.replicas | int }}
   template:
     metadata:
       labels:
         {{- include "xdai.labels" . | nindent 8 }}
     spec:
+      terminationGracePeriodSeconds: 60
       containers:
       - name: xdai
         image: "{{ include "xdai.image" . }}"
-        args: 
+        args:
         {{- range .Values.args }}
         - {{ . }}
         {{- end }}
@@ -29,8 +32,30 @@ spec:
           name: websocket
         - containerPort: 30303
           name: udp
-        resources:
-          {{- toYaml .Values.resources | nindent 12 }}
+        volumeMounts:
+        - name: xdai-data
+          mountPath: .data
+        - name: xdai-cache
+          mountPath: .cache
+  volumeClaimTemplates:
+  - metadata:
+      name: xdai-data
+    spec:
+      accessModes:
+      - {{ .Values.dataPersistence.accessMode | quote }}
+      storageClassName:  {{ .Values.dataPersistence.storageClass }}
+      resources:
+        requests:
+          storage: {{ .Values.dataPersistence.size }} 
+  - metadata:
+      name: xdai-cache
+    spec:
+      accessModes:
+      - {{ .Values.cachePersistence.accessMode | quote }}
+      storageClassName: {{ .Values.cachePersistence.storageClass }}
+      resources:
+        requests:
+          storage: {{ .Values.cachePersistence.size }}      
 ---
 apiVersion: v1
 kind: Service
