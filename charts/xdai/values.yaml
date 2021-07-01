@@ -1,5 +1,5 @@
 image: 
-  repository: registry.aliyuncs.com/supercoinman/openethereum
+  repository: registry-vpc.cn-shanghai.aliyuncs.com/supercoinman/openethereum
   tag: v3.2.6
   pullPolicy: Always
 
@@ -7,6 +7,8 @@ replicas: 1
 
 args: 
   - "--chain=xdai"
+  - "--base-path=/data"
+  - "--log-file=/data/openethereum.log"
   - "--jsonrpc-port=8545"
   - "--jsonrpc-cors=all"
   - "--jsonrpc-interface=all" 
@@ -29,18 +31,12 @@ dataPersistence:
   ## If set to "-", storageClassName: "", which disables dynamic provisioning
   ## If undefined (the default) or set to null, no storageClassName spec is set;
   ## i.e. choosing the default provisioner: gp2 on AWS, standard on GKE, AWS & OpenStack, etc.
-  storageClass: "alicloud-disk-topology"
+  storageClass: "alicloud-disk-essd"
 
+podAnnotations:
+  k8s.aliyun.com/pod-with-eip: "true"
+  k8s.aliyun.com/eip-bandwidth: '100' #注意：指定带宽不需要带单位
 
-cachePersistence:
-  accessMode: ReadWriteOnce
-  size: 100Gi
-  ## Persistent Volume Storage Class
-  ## If defined, storageClassName: <storageClass>
-  ## If set to "-", storageClassName: "", which disables dynamic provisioning
-  ## If undefined (the default) or set to null, no storageClassName spec is set;
-  ## i.e. choosing the default provisioner: gp2 on AWS, standard on GKE, AWS & OpenStack, etc.
-  storageClass: "alicloud-disk-topology"
 
 # ---------------------------------------- advcanced options ------------------------------------
 

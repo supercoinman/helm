@@ -16,8 +16,14 @@ spec:
     metadata:
       labels:
         {{- include "xdai.labels" . | nindent 8 }}
+      annotations:
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       terminationGracePeriodSeconds: 60
+      securityContext:
+        fsGroup: 999
       containers:
       - name: xdai
         image: "{{ include "xdai.image" . }}"
@@ -33,13 +39,11 @@ spec:
         - containerPort: 30303
           name: udp
         volumeMounts:
-        - name: xdai-data
-          mountPath: .data
-        - name: xdai-cache
-          mountPath: .cache
+        - name: data
+          mountPath: /data
   volumeClaimTemplates:
   - metadata:
-      name: xdai-data
+      name: data
     spec:
       accessModes:
       - {{ .Values.dataPersistence.accessMode | quote }}
@@ -47,15 +51,6 @@ spec:
       resources:
         requests:
           storage: {{ .Values.dataPersistence.size }} 
-  - metadata:
-      name: xdai-cache
-    spec:
-      accessModes:
-      - {{ .Values.cachePersistence.accessMode | quote }}
-      storageClassName: {{ .Values.cachePersistence.storageClass }}
-      resources:
-        requests:
-          storage: {{ .Values.cachePersistence.size }}      
 ---
 apiVersion: v1
 kind: Service
